@@ -1,1 +1,94 @@
+https://www.tinkercad.com/things/kvIYBYn8fh8-7-seg-clock/editel?returnTo=https%3A%2F%2Fwww.tinkercad.com%2Fdashboard%2Fdesigns%2Fcircuits
+
+
+#include <Wire.h>
+#define HT16K33_ADDR 0x70  
+
+
+const uint8_t digitPattern[10] = {
+  0x3F,
+  0x06, 
+  0x5B,
+  0x4F, 
+  0x66, 
+  0x6D, 
+  0x7D, 
+  0x07, 
+  0x7F, 
+  0x6F 
+};
+
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+
+  
+  Wire.beginTransmission(HT16K33_ADDR);
+  Wire.write(0x21);  
+  Wire.endTransmission();
+
+  Wire.beginTransmission(HT16K33_ADDR);
+  Wire.write(0x81);  
+  Wire.endTransmission();
+
+  setBrightness(15); 
+
+ 
+  uint8_t testBuffer[8] = {
+    digitPattern[1], 0x00,  
+    digitPattern[2], 0x00,  
+    digitPattern[3], 0x00,  
+    digitPattern[4], 0x00   
+  };
+  sendToDisplay(testBuffer);
+  delay(2000);
+}
+
+void loop() {
+  
+  for (int i = 1; i <= 40; i++) {
+    displayNumber(i);
+    delay(500);
+  }
+
+  
+  for (int i = 39; i >= 1; i--) {
+    displayNumber(i);
+    delay(500);
+  }
+}
+
+void displayNumber(int num) {
+  uint8_t displayBuffer[8] = {0};
+
+  int tens = num / 10;
+  int ones = num % 10;
+
+  if (num < 10) {
+    displayBuffer[2] = digitPattern[ones]; 
+  } else {
+    displayBuffer[0] = digitPattern[tens]; 
+    displayBuffer[2] = digitPattern[ones]; 
+  }
+
+  sendToDisplay(displayBuffer);
+}
+
+void sendToDisplay(uint8_t buffer[8]) {
+  Wire.beginTransmission(HT16K33_ADDR);
+  Wire.write(0x00); 
+
+  for (int i = 0; i < 8; i++) {
+    Wire.write(buffer[i]);
+  }
+
+  Wire.endTransmission();
+}
+
+void setBrightness(uint8_t brightness) {
+  brightness &= 0x0F; 
+  Wire.beginTransmission(HT16K33_ADDR);
+  Wire.write(0xE0 | brightness);  
+  Wire.endTransmission();
+}
 
