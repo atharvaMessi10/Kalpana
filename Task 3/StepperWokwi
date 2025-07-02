@@ -18,20 +18,19 @@ void loop() {
   digitalWrite(DIR_PIN, HIGH);
   moveStepper(STEPS_TO_MOVE);
 
-  delay(1000); // optional pause
-
+  delay(1000); 
   
   Serial.println("Moving backward 1000 steps");
   digitalWrite(DIR_PIN, LOW);
   moveStepper(STEPS_TO_MOVE);
 
-  delay(1000); // optional pause
+  delay(1000);
 }
 
 void moveStepper(int steps) {
   for (int i = 0; i < steps; i++) {
     digitalWrite(STEP_PIN, HIGH);
-    delayMicroseconds(50);       // pulse duration
+    delayMicroseconds(50);       
     digitalWrite(STEP_PIN, LOW);
     delayMicroseconds(STEP_DELAY);
   }
