@@ -2,60 +2,46 @@ https://www.tinkercad.com/things/kvIYBYn8fh8-7-seg-clock/editel?returnTo=https%3
 
 
 #include <Wire.h>
-#define HT16K33_ADDR 0x70  
 
+#define HT16K33_ADDR 0x70
 
 const uint8_t digitPattern[10] = {
-  0x3F,
-  0x06, 
-  0x5B,
-  0x4F, 
-  0x66, 
-  0x6D, 
-  0x7D, 
-  0x07, 
-  0x7F, 
-  0x6F 
+  0x3F, 0x06, 0x5B, 0x4F,
+  0x66, 0x6D, 0x7D, 0x07,
+  0x7F, 0x6F
 };
 
-void setup() {
-  Wire.begin();
-  Serial.begin(9600);
-
-  
-  Wire.beginTransmission(HT16K33_ADDR);
-  Wire.write(0x21);  
+void i2cWriteRegister(uint8_t address, uint8_t reg) {
+  Wire.beginTransmission(address);
+  Wire.write(reg);
   Wire.endTransmission();
-
-  Wire.beginTransmission(HT16K33_ADDR);
-  Wire.write(0x81);  
-  Wire.endTransmission();
-
-  setBrightness(15); 
-
- 
-  uint8_t testBuffer[8] = {
-    digitPattern[1], 0x00,  
-    digitPattern[2], 0x00,  
-    digitPattern[3], 0x00,  
-    digitPattern[4], 0x00   
-  };
-  sendToDisplay(testBuffer);
-  delay(2000);
 }
 
-void loop() {
-  
-  for (int i = 1; i <= 40; i++) {
-    displayNumber(i);
-    delay(500);
+void i2cWriteData(uint8_t address, uint8_t reg, const uint8_t *data, uint8_t len) {
+  Wire.beginTransmission(address);
+  Wire.write(reg);
+  for (uint8_t i = 0; i < len; i++) {
+    Wire.write(data[i]);
   }
+  Wire.endTransmission();
+}
 
-  
-  for (int i = 39; i >= 1; i--) {
-    displayNumber(i);
-    delay(500);
-  }
+void initHT16K33() {
+  Wire.begin();
+  delay(50); 
+
+  i2cWriteRegister(HT16K33_ADDR, 0x21); 
+  i2cWriteRegister(HT16K33_ADDR, 0x81); 
+  setBrightness(15);
+}
+
+void setBrightness(uint8_t brightness) {
+  brightness &= 0x0F;
+  i2cWriteRegister(HT16K33_ADDR, 0xE0 | brightness);
+}
+
+void sendToDisplay(uint8_t buffer[8]) {
+  i2cWriteData(HT16K33_ADDR, 0x00, buffer, 8);
 }
 
 void displayNumber(int num) {
@@ -65,30 +51,41 @@ void displayNumber(int num) {
   int ones = num % 10;
 
   if (num < 10) {
-    displayBuffer[2] = digitPattern[ones]; 
+    displayBuffer[2] = digitPattern[ones];
   } else {
-    displayBuffer[0] = digitPattern[tens]; 
-    displayBuffer[2] = digitPattern[ones]; 
+    displayBuffer[0] = digitPattern[tens];
+    displayBuffer[2] = digitPattern[ones];
   }
 
   sendToDisplay(displayBuffer);
 }
 
-void sendToDisplay(uint8_t buffer[8]) {
-  Wire.beginTransmission(HT16K33_ADDR);
-  Wire.write(0x00); 
+void setup() {
+  Serial.begin(9600);
+  initHT16K33();
 
-  for (int i = 0; i < 8; i++) {
-    Wire.write(buffer[i]);
+  uint8_t testBuffer[8] = {
+    digitPattern[1],
+    digitPattern[2], 
+    digitPattern[3], 
+    digitPattern[4], 
+  };
+  sendToDisplay(testBuffer);
+  delay(2000);
+}
+
+void loop() {
+  for (int i = 1; i <= 40; i++) {
+    displayNumber(i);
+    delay(500);
   }
 
-  Wire.endTransmission();
+  for (int i = 39; i >= 1; i--) {
+    displayNumber(i);
+    delay(500);
+  }
 }
 
-void setBrightness(uint8_t brightness) {
-  brightness &= 0x0F; 
-  Wire.beginTransmission(HT16K33_ADDR);
-  Wire.write(0xE0 | brightness);  
-  Wire.endTransmission();
-}
+
+
 
